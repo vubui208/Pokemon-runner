@@ -1,0 +1,333 @@
+import pygame
+import os
+import random
+from enemy import Enemy
+from pokemon import Pokemon
+from projectile import Projectile
+Screen_x = 800
+Screen_y = 600
+pygame.init()
+# C:\Users\KelvinThePig\OneDrive\Máy tính\Game_ap_cs\pokemonChoosing_img
+
+background1 = pygame.image.load(os.path.join("background","image1.png"))
+background1 = pygame.transform.scale(background1,(Screen_x,Screen_y))
+background2 = pygame.image.load(os.path.join("background","image2.png"))
+background2 = pygame.transform.scale(background2,(Screen_x,Screen_y))
+option1 = pygame.image.load(os.path.join("pokemonChoosing_img","charmander.png"))
+
+option1 = pygame.transform.scale(option1,(100,100))
+option1_rect = option1.get_rect()
+option1_rect.topleft = (180,300)
+option2 = pygame.image.load(os.path.join("pokemonChoosing_img","pikachu.png"))
+option2 = pygame.transform.scale(option2,(100,100))
+option2_rect = option1.get_rect()
+option2_rect.topleft = (option1_rect.x+200,300)
+option3 = pygame.image.load(os.path.join("pokemonChoosing_img","trecko.png"))
+option3 = pygame.transform.scale(option3,(100,100))
+option3_rect = option1.get_rect()
+option3_rect.topleft = (option2_rect.x+200,300)
+pygame.display.set_caption("POKEMON RUN")
+screen = pygame.display.set_mode((Screen_x, Screen_y))
+selected = ""
+# images
+
+pikachu_running = []
+charmander_running = []
+trecko_running = []
+
+background_image = []
+for filename in sorted(os.listdir("background_img")):
+    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
+        path = os.path.join("background_img", filename)
+        image = pygame.image.load(path).convert_alpha()
+        background_image.append(pygame.transform.scale(image, (800, 600)))
+enemy_image = []
+for filename in sorted(os.listdir("enemy_img")):
+    if filename.endswith(".gif"): 
+        path = os.path.join("enemy_img", filename)
+        image = pygame.image.load(path).convert_alpha()
+        enemy_image.append(pygame.transform.scale(image, (80, 80)))
+for filename in sorted(os.listdir("pikachu_frame")):
+    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
+        path = os.path.join("pikachu_frame", filename)
+        image = pygame.image.load(path).convert_alpha()
+        pikachu_running.append(pygame.transform.scale(image, (100, 100)))
+for filename in sorted(os.listdir("trecko_frame")):
+    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
+        path = os.path.join("trecko_frame", filename)
+        image = pygame.image.load(path).convert_alpha()
+        trecko_running.append(pygame.transform.scale(image, (100, 100)))
+for filename in sorted(os.listdir("charmander_frame")):
+    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
+        path = os.path.join("charmander_frame", filename)
+        image = pygame.image.load(path).convert_alpha()
+        charmander_running.append(pygame.transform.scale(image, (100, 100)))
+clock = pygame.time.Clock()
+
+Title_Font = pygame.font.Font("font.ttf", 45)
+gameStart_font = pygame.font.Font("font.ttf", 25)
+Dicitonary_font = pygame.font.Font("font.ttf", 25)    
+GameOver_font = pygame.font.Font("font.ttf", 50)
+Replay_font =  pygame.font.Font("font.ttf", 30)
+Choosing_font = pygame.font.Font("font.ttf", 40)
+outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
+BUTTON_COLOR = (255, 165, 0)
+BUTTON_BORDER_COLOR = None
+
+speed = 5  
+jump_speed = -50  
+gravity = 3   
+cooldown_time = 1000
+last_slash_time = 0
+y_velocity = 0  
+Projectile_speed = 20
+# game status 
+isJump = False
+start = False
+GameOver = False
+Dictionary = False
+# initiate object
+player = Pokemon(pikachu_running,80,425)  
+enemy = Enemy(enemy_image,800,450) 
+slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), "red")
+
+player_base = player.bottom
+runner = pikachu_running
+
+running = True
+def render_gradient_text(text, font, start_color, end_color):
+    # Render text in white to get the alpha channel
+    text_surface = font.render(text, True, (255, 255, 255))
+    width, height = text_surface.get_size()
+    gradient_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+
+    for y in range(height):
+        
+        ratio = y / height
+        r = int(start_color[0] * (1 - ratio) + end_color[0] * ratio)
+        g = int(start_color[1] * (1 - ratio) + end_color[1] * ratio)
+        b = int(start_color[2] * (1 - ratio) + end_color[2] * ratio)
+        pygame.draw.line(gradient_surface, (r, g, b), (0, y), (width, y))
+
+
+    text_surface.set_colorkey((0, 0, 0))
+    gradient_surface.blit(text_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    return gradient_surface
+
+
+
+# fade in 
+def fade_in(screen, bg_after, duration=1000):
+    fade = pygame.Surface(screen.get_size())
+    fade.fill((0, 0, 0))
+    clock = pygame.time.Clock()
+
+    start = pygame.time.get_ticks()
+    while True:
+        now = pygame.time.get_ticks()
+        elapsed = now - start
+        alpha = max(0, 255 - int((elapsed / duration) * 255))
+        fade.set_alpha(alpha)
+
+        screen.blit(bg_after, (0, 0))
+        screen.blit(fade, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
+
+        if elapsed >= duration:
+            break
+# draw dictionary
+def draw_dictionary_window():
+    screen.blit(background2, (0, 0))
+    btn_option_rects = [
+    option1_rect.inflate(20, 20),
+    option2_rect.inflate(20, 20),
+    option3_rect.inflate(20, 20)
+]
+
+    btn_options = [option1, option2, option3]
+    color = [0,255,255]
+    border_colors = [color] * 3
+
+
+    mouse_pos = pygame.mouse.get_pos()
+    x = Dictionary_rect.centerx - Dictionary_text.get_width() // 2 - 175
+    y = Dictionary_rect.centery - Dictionary_text.get_height() // 2 - 170
+
+    # Vẽ nền và viền chữ "Choosing"
+    screen.blit(background2, (0, 0))
+    for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+        screen.blit(outline, (x + dx, y + dy))
+    screen.blit(Choosing_text, (x, y))
+
+    # Vẽ các lựa chọn
+    for i in range(3):
+        screen.blit(btn_options[i], (btn_option_rects[i].x, btn_option_rects[i].y))
+        if btn_option_rects[i].collidepoint(mouse_pos) and border_colors[i]:
+            pygame.draw.rect(screen, border_colors[i], btn_option_rects[i], 3, border_radius=8)
+
+pygame.display.update()
+
+# draw starting window
+def draw_start_window(button_rect, button_dictionary_rect):
+    screen.blit(Title, (Screen_x // 2 - Title.get_width() // 2 + 20, Screen_y // 2 - 150))
+    screen.blit(startGame_text, (button_rect.centerx - startGame_text.get_width() // 2, button_rect.centery - startGame_text.get_height() // 2))
+    screen.blit(Dictionary_text, (button_dictionary_rect.centerx - Dictionary_text.get_width() // 2, button_dictionary_rect.centery - Dictionary_text.get_height() // 2))
+# draw game over window
+def draw_game_over_window(GameOver_rect):
+    screen.blit(background1, (0, 0))
+    screen.blit(GameOver_text, (GameOver_rect.centerx - GameOver_text.get_width() // 2, GameOver_rect.centery - GameOver_text.get_height() // 2))
+    screen.blit(replay_text, (replay_rect.centerx - replay_text.get_width() // 2, replay_rect.centery - replay_text.get_height() // 2))
+# drawing 
+def draw_window():
+    global start
+    global GameOver
+    frame_delay = 100  # hiển thị mỗi frame trong 50ms (~20 FPS)
+    frame_index = (pygame.time.get_ticks() // frame_delay) % len(background_image)
+    if start:
+        
+        screen.blit(background1, (0, 0)) 
+        for s in slashes:
+            s.move(Projectile_speed, 0)
+            s.draw(screen)
+            if s.x > Screen_x:
+                slashes.remove(s)
+    if Dictionary:
+        draw_dictionary_window()
+    if not start and not Dictionary:
+        screen.blit(background_image[frame_index], (0, 0))
+        button_rect = startGame_rect.inflate(40, 20)
+        button_dictionary_rect = Dictionary_rect.inflate(40, 20)
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Set default colors
+        color = BUTTON_COLOR
+        border_color = BUTTON_BORDER_COLOR
+        color_dict = BUTTON_COLOR
+        border_color_dict = BUTTON_BORDER_COLOR
+        # Check hover
+        if button_rect.collidepoint(mouse_pos):
+       
+            border_color = (0, 255, 255)  
+        if button_dictionary_rect.collidepoint(mouse_pos):
+            border_color_dict = (0, 255, 255)
+        # Draw button rectangle
+        pygame.draw.rect(screen, color, button_rect, border_radius=8)
+        pygame.draw.rect(screen, color, button_dictionary_rect, border_radius=8)
+        # Draw border if color is not None
+        if border_color:
+            pygame.draw.rect(screen, border_color, button_rect, 3, border_radius=8)
+        if border_color_dict:
+            pygame.draw.rect(screen, border_color_dict, button_dictionary_rect, 3, border_radius=8)
+        # Draw text
+        draw_start_window(button_rect, button_dictionary_rect)
+        
+    if start and not Dictionary:
+        screen.blit(enemy_image[int(pygame.time.get_ticks() / 100) % len(enemy_image)], (enemy.x, enemy.y))
+
+        if not isJump:
+            screen.blit(runner[int(pygame.time.get_ticks() / 100) % len(runner)], (player.x, player.y))
+        else:
+            screen.blit(runner[1], (player.x, player.y)) #jumping image
+        
+        if GameOver:
+            draw_game_over_window(GameOver_rect)
+    #    not done
+    pygame.display.update()
+        
+# Game button and text
+Title = render_gradient_text("POKEMON RUNNER", Title_Font, (255, 223, 0), (255, 69, 58))
+startGame_text = gameStart_font.render("Start game", True, (255, 228, 196))
+startGame_rect = startGame_text.get_rect()
+startGame_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 15, Screen_y // 2 - 20 )
+button_startgame_rect = startGame_rect.inflate(40, 20)
+button_startgame_rect.topleft = (startGame_rect.left - 20, startGame_rect.top - 10)
+Dictionary_text = Dicitonary_font.render("Dictionary", True, (255, 228, 196))
+Dictionary_rect = Dictionary_text.get_rect()
+Dictionary_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 17, Screen_y // 2 +30 )
+button_dictionary_rect = Dictionary_rect.inflate(40, 20)
+button_dictionary_rect.topleft = (Dictionary_rect.left - 20, Dictionary_rect.top - 10)
+GameOver_text = render_gradient_text("GAME OVER!", Title_Font, (255, 223, 0), (255, 69, 58))
+GameOver_rect = GameOver_text.get_rect()
+GameOver_rect.topleft = (Screen_x // 2 - GameOver_text.get_width() // 2 + 15, Screen_y // 2-30 )
+replay_text = Replay_font.render("Press R to replay", True, (0, 0, 0))
+replay_rect = replay_text.get_rect()
+replay_rect.topleft = (Screen_x // 2 - replay_text.get_width() // 2 + 15, Screen_y // 2 + 30)
+Choosing_text = Choosing_font.render("Choose your Pokemon", True, (0, 0, 0))
+Choosing_rect = Choosing_text.get_rect()
+Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen_y // 2)
+# Main game
+slashes = [] 
+slash_image = pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha()
+while running:
+    player_rect = pygame.Rect(player.x, player.y, player.images[0].get_width()-60, player.images[0].get_height())
+    enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.images[0].get_width()-50, enemy.images[0].get_height())
+    pygame.time.delay(60)
+    clock.tick(27)
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if button_startgame_rect.collidepoint(event.pos) and Dictionary == False:
+                start = True
+                fade_in(screen,background1, 2000)
+            if button_dictionary_rect.collidepoint(event.pos) and start == False and Dictionary == False:
+                Dictionary = True
+                fade_in(screen,background2, 2000)
+            if option1_rect.collidepoint(event.pos):
+                selected = "Charmander"
+                print("DEBUG")
+            if option2_rect.collidepoint(event.pos):
+                selected = "Pikachu"
+                print("DEBUG")
+
+            if option3_rect.collidepoint(event.pos):
+                selected = "Trecko"
+                print("DEBUG")
+ 
+    keys = pygame.key.get_pressed()
+
+    if start:
+        enemy.move(-(speed+3), 0)
+        if keys[pygame.K_SPACE] and not isJump:
+            print("on click SPACE")
+            isJump = True
+            y_velocity = jump_speed
+        if keys[pygame.K_r] and GameOver:
+            GameOver = False
+            enemy.x = 800
+            slashes.clear()
+    current_time = pygame.time.get_ticks()
+    if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
+        scaled_image = pygame.transform.scale(slash_image, (200, 200))
+        new_slash = Projectile(player.x + 50, player.y -50, scaled_image, "red")
+        slashes.append(new_slash)
+        last_slash_time = current_time
+    if keys[pygame.K_ESCAPE]:
+        start = False
+        Dictionary = False
+        enemy.x = 800
+        player.y = 425
+
+
+    if isJump:
+        player.move(0, y_velocity)
+        y_velocity += gravity
+
+        # Kiểm tra va chạm với đất
+        if player.bottom > player_base:
+            player.bottom = player_base
+            isJump = False
+            y_velocity = 0
+    if enemy.x < 0:
+            enemy.x = 800
+    if player_rect.colliderect(enemy_rect):
+        GameOver = True
+    for i in slashes:
+        i_rect = i.image.get_rect(topleft=(i.x-50, i.y))
+        if i_rect.colliderect(enemy_rect):
+            enemy.x = 800
+    draw_window()
+
+pygame.quit()
