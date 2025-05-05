@@ -1,5 +1,6 @@
 import pygame
 import os
+import time
 import random
 from enemy import Enemy
 from pokemon import Pokemon
@@ -17,15 +18,15 @@ option1 = pygame.image.load(os.path.join("pokemonChoosing_img","charmander.png")
 
 option1 = pygame.transform.scale(option1,(100,100))
 option1_rect = option1.get_rect()
-option1_rect.topleft = (180,300)
+option1_rect.topleft = (180,350)
 option2 = pygame.image.load(os.path.join("pokemonChoosing_img","pikachu.png"))
 option2 = pygame.transform.scale(option2,(100,100))
-option2_rect = option1.get_rect()
-option2_rect.topleft = (option1_rect.x+200,300)
+option2_rect = option2.get_rect()  # Fix: Use option2's rect
+option2_rect.topleft = (option1_rect.x+200,350)
 option3 = pygame.image.load(os.path.join("pokemonChoosing_img","trecko.png"))
 option3 = pygame.transform.scale(option3,(100,100))
-option3_rect = option1.get_rect()
-option3_rect.topleft = (option2_rect.x+200,300)
+option3_rect = option3.get_rect()  # Fix: Use option3's rect
+option3_rect.topleft = (option2_rect.x+200,350)
 pygame.display.set_caption("POKEMON RUN")
 screen = pygame.display.set_mode((Screen_x, Screen_y))
 selected = ""
@@ -56,12 +57,12 @@ for filename in sorted(os.listdir("trecko_frame")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
         path = os.path.join("trecko_frame", filename)
         image = pygame.image.load(path).convert_alpha()
-        trecko_running.append(pygame.transform.scale(image, (100, 100)))
+        trecko_running.append(pygame.transform.scale(image, (150, 150)))
 for filename in sorted(os.listdir("charmander_frame")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
         path = os.path.join("charmander_frame", filename)
         image = pygame.image.load(path).convert_alpha()
-        charmander_running.append(pygame.transform.scale(image, (100, 100)))
+        charmander_running.append(pygame.transform.scale(image, (150, 150)))
 clock = pygame.time.Clock()
 
 Title_Font = pygame.font.Font("font.ttf", 45)
@@ -75,24 +76,34 @@ BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 
 speed = 5  
-jump_speed = -50  
-gravity = 3   
-cooldown_time = 1000
+jump_speed = -30  
+gravity = 4   
+cooldown_time = 0000
 last_slash_time = 0
 y_velocity = 0  
-Projectile_speed = 20
+Projectile_speed = 40
 # game status 
 isJump = False
 start = False
 GameOver = False
-Dictionary = False
+Dictionary = True
 # initiate object
 player = Pokemon(pikachu_running,80,425)  
 enemy = Enemy(enemy_image,800,450) 
 slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), "red")
 
+character = {
+    "charmander" : charmander_running,
+    "pikachu" : pikachu_running,
+    "trecko" : trecko_running
+}
+slash_color = {
+    "charmander" : pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(),
+    "pikachu" : pygame.image.load(os.path.join("slash_skill","yellow_slash.png")).convert_alpha(),
+    "trecko" : pygame.image.load(os.path.join("slash_skill","green_slash.png")).convert_alpha()
+}
 player_base = player.bottom
-runner = pikachu_running
+
 
 running = True
 def render_gradient_text(text, font, start_color, end_color):
@@ -135,14 +146,15 @@ def fade_in(screen, bg_after, duration=1000):
         clock.tick(60)
 
         if elapsed >= duration:
+            isDone = True
             break
 # draw dictionary
 def draw_dictionary_window():
     screen.blit(background2, (0, 0))
     btn_option_rects = [
-    option1_rect.inflate(20, 20),
-    option2_rect.inflate(20, 20),
-    option3_rect.inflate(20, 20)
+    option1_rect.inflate(10, 10),
+    option2_rect.inflate(10, 10),
+    option3_rect.inflate(10, 10)
 ]
 
     btn_options = [option1, option2, option3]
@@ -152,19 +164,22 @@ def draw_dictionary_window():
 
     mouse_pos = pygame.mouse.get_pos()
     x = Dictionary_rect.centerx - Dictionary_text.get_width() // 2 - 175
-    y = Dictionary_rect.centery - Dictionary_text.get_height() // 2 - 170
+    y = Dictionary_rect.centery - Dictionary_text.get_height() // 2 - 100
 
     # Vẽ nền và viền chữ "Choosing"
-    screen.blit(background2, (0, 0))
-    for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
-        screen.blit(outline, (x + dx, y + dy))
-    screen.blit(Choosing_text, (x, y))
+    if isDone:
+            screen.blit(background2, (0, 0))
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                if Dictionary:
+                    screen.blit(outline, (x + dx, y + dy))
+            screen.blit(Choosing_text, (x, y))
 
     # Vẽ các lựa chọn
-    for i in range(3):
-        screen.blit(btn_options[i], (btn_option_rects[i].x, btn_option_rects[i].y))
-        if btn_option_rects[i].collidepoint(mouse_pos) and border_colors[i]:
-            pygame.draw.rect(screen, border_colors[i], btn_option_rects[i], 3, border_radius=8)
+    if isDone:
+        for i in range(3):
+            screen.blit(btn_options[i], (btn_option_rects[i].x, btn_option_rects[i].y))
+            if btn_option_rects[i].collidepoint(mouse_pos) and border_colors[i] and Dictionary:
+                pygame.draw.rect(screen, border_colors[i], btn_option_rects[i], 3, border_radius=8)
 
 pygame.display.update()
 
@@ -182,8 +197,10 @@ def draw_game_over_window(GameOver_rect):
 def draw_window():
     global start
     global GameOver
+    global Dictionary
     frame_delay = 100  # hiển thị mỗi frame trong 50ms (~20 FPS)
     frame_index = (pygame.time.get_ticks() // frame_delay) % len(background_image)
+    screen.blit(background1, (0, 0))
     if start:
         
         screen.blit(background1, (0, 0)) 
@@ -193,6 +210,7 @@ def draw_window():
             if s.x > Screen_x:
                 slashes.remove(s)
     if Dictionary:
+        selected = ""
         draw_dictionary_window()
     if not start and not Dictionary:
         screen.blit(background_image[frame_index], (0, 0))
@@ -232,6 +250,7 @@ def draw_window():
         
         if GameOver:
             draw_game_over_window(GameOver_rect)
+    
     #    not done
     pygame.display.update()
         
@@ -239,12 +258,12 @@ def draw_window():
 Title = render_gradient_text("POKEMON RUNNER", Title_Font, (255, 223, 0), (255, 69, 58))
 startGame_text = gameStart_font.render("Start game", True, (255, 228, 196))
 startGame_rect = startGame_text.get_rect()
-startGame_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 15, Screen_y // 2 - 20 )
+startGame_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 15, Screen_y // 2 - 50 )
 button_startgame_rect = startGame_rect.inflate(40, 20)
-button_startgame_rect.topleft = (startGame_rect.left - 20, startGame_rect.top - 10)
+button_startgame_rect.topleft = (startGame_rect.left - 20, startGame_rect.top -30)
 Dictionary_text = Dicitonary_font.render("Dictionary", True, (255, 228, 196))
 Dictionary_rect = Dictionary_text.get_rect()
-Dictionary_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 17, Screen_y // 2 +30 )
+Dictionary_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 17, Screen_y // 2  )
 button_dictionary_rect = Dictionary_rect.inflate(40, 20)
 button_dictionary_rect.topleft = (Dictionary_rect.left - 20, Dictionary_rect.top - 10)
 GameOver_text = render_gradient_text("GAME OVER!", Title_Font, (255, 223, 0), (255, 69, 58))
@@ -258,38 +277,66 @@ Choosing_rect = Choosing_text.get_rect()
 Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen_y // 2)
 # Main game
 slashes = [] 
-slash_image = pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha()
+isDone = True
 while running:
     player_rect = pygame.Rect(player.x, player.y, player.images[0].get_width()-60, player.images[0].get_height())
     enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.images[0].get_width()-50, enemy.images[0].get_height())
     pygame.time.delay(60)
     clock.tick(27)
-    
+    if selected:
+        runner =character[selected]
+        slash_image = slash_color[selected]
+    # Xử lý khi nhấn vào dictionary và chọn Pokemon
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if button_startgame_rect.collidepoint(event.pos) and Dictionary == False:
+            
+            # Điều kiện khi nhấn nút "Start Game"
+            if button_startgame_rect.collidepoint(event.pos) and Dictionary == False and start == False:
                 start = True
-                fade_in(screen,background1, 2000)
+                GameOver = False
+                fade_in(screen, background1, 2000)
+            
+            # Điều kiện khi nhấn vào Dictionary
             if button_dictionary_rect.collidepoint(event.pos) and start == False and Dictionary == False:
-                Dictionary = True
-                fade_in(screen,background2, 2000)
-            if option1_rect.collidepoint(event.pos):
-                selected = "Charmander"
-                print("DEBUG")
-            if option2_rect.collidepoint(event.pos):
-                selected = "Pikachu"
-                print("DEBUG")
+                Dictionary = True  # Chuyển sang màn hình Dictionary
+                selected = ""  # Reset lựa chọn Pokémon
+                start = False
+                print("DEBUG: Returning to Dictionary")
+                fade_in(screen, background2, 2000)
+                isDone = True  # Đảm bảo không cho phép chọn lại
 
-            if option3_rect.collidepoint(event.pos):
-                selected = "Trecko"
-                print("DEBUG")
+
+            # Điều kiện chọn Pokemon khi đang ở trong Dictionary
+            if Dictionary and isDone and selected == "":  # Chỉ khi Dictionary đang được hiển thị và chưa chọn Pokémon
+                if option1_rect.collidepoint(event.pos):
+                    selected = "charmander"
+                    Dictionary = False  # Chọn Pokémon và thoát khỏi Dictionary
+                    isDone = False
+                    print("DEBUG: Chosen Charmander")
+                if option2_rect.collidepoint(event.pos):
+                    selected = "pikachu"
+                    Dictionary = False  # Chọn Pokémon và thoát khỏi Dictionary
+                    isDone = False
+                    print("DEBUG: Chosen Pikachu")
+                if option3_rect.collidepoint(event.pos):
+                    selected = "trecko"
+                    Dictionary = False  # Chọn Pokémon và thoát khỏi Dictionary
+                    print("DEBUG: Chosen Trecko")
+                    isDone = False
  
     keys = pygame.key.get_pressed()
-
+    
     if start:
-        enemy.move(-(speed+3), 0)
+        Dictionary = False
+        enemy.move(-Projectile_speed, 0)
+        if keys[pygame.K_a] and player.x > speed:
+            print("on click A")
+            player.move(-speed, 0)
+        if keys[pygame.K_d] and player.x < Screen_x - player.width - speed:
+            print("on click D")
+            player.move(speed, 0)
         if keys[pygame.K_SPACE] and not isJump:
             print("on click SPACE")
             isJump = True
@@ -297,14 +344,18 @@ while running:
         if keys[pygame.K_r] and GameOver:
             GameOver = False
             enemy.x = 800
+            player.x = 80
+            last_slash_time = 0
             slashes.clear()
-    current_time = pygame.time.get_ticks()
+    current_time = pygame.time.get_ticks() + cooldown_time
     if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
         scaled_image = pygame.transform.scale(slash_image, (200, 200))
-        new_slash = Projectile(player.x + 50, player.y -50, scaled_image, "red")
+        new_slash = Projectile(player.x + 50, player.y -50, scaled_image, )
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:
+        print(Dictionary)
+        selected = ""
         start = False
         Dictionary = False
         enemy.x = 800
