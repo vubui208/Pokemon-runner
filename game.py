@@ -35,7 +35,9 @@ selected = ""
 pikachu_running = []
 charmander_running = []
 trecko_running = []
-
+pikachu_running_flip = []
+charmander_running_flip = []
+trecko_running_flip = []
 background_image = []
 for filename in sorted(os.listdir("background_img")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
@@ -63,8 +65,21 @@ for filename in sorted(os.listdir("charmander_frame")):
         path = os.path.join("charmander_frame", filename)
         image = pygame.image.load(path).convert_alpha()
         charmander_running.append(pygame.transform.scale(image, (150, 150)))
-clock = pygame.time.Clock()
 
+# flip image
+for filename in pikachu_running:
+    
+    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
+    pikachu_running_flip.append(pygame.transform.scale(flipped_image, (100, 100)))
+clock = pygame.time.Clock()
+for filename in charmander_running:
+    
+    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
+    charmander_running_flip.append(pygame.transform.scale(flipped_image, (150, 150)))
+for filename in trecko_running:
+    
+    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
+    trecko_running_flip.append(pygame.transform.scale(flipped_image, (150, 150)))
 Title_Font = pygame.font.Font("font.ttf", 45)
 gameStart_font = pygame.font.Font("font.ttf", 25)
 Dicitonary_font = pygame.font.Font("font.ttf", 25)    
@@ -75,32 +90,42 @@ outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # 
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 
-speed = 5  
+speed = 10 
 jump_speed = -30  
 gravity = 4   
-cooldown_time = 0000
+cooldown_time = 100
 last_slash_time = 0
 y_velocity = 0  
-Projectile_speed = 40
+Projectile_speed = 30
 # game status 
 isJump = False
 start = False
 GameOver = False
 Dictionary = True
 # initiate object
-player = Pokemon(pikachu_running,80,425)  
+player = Pokemon(pikachu_running,80,425,)  
 enemy = Enemy(enemy_image,800,450) 
-slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), "red")
+slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), True,False)
 
 character = {
     "charmander" : charmander_running,
     "pikachu" : pikachu_running,
     "trecko" : trecko_running
 }
+character_flip = {
+    "charmander" : charmander_running_flip,
+    "pikachu" : pikachu_running_flip,
+    "trecko" : trecko_running_flip
+}
 slash_color = {
     "charmander" : pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(),
     "pikachu" : pygame.image.load(os.path.join("slash_skill","yellow_slash.png")).convert_alpha(),
     "trecko" : pygame.image.load(os.path.join("slash_skill","green_slash.png")).convert_alpha()
+}
+slash_color_flip = {
+    "charmander": pygame.transform.flip(pygame.image.load(os.path.join("slash_skill", "red_slash.png")).convert_alpha(), True, False),
+    "pikachu": pygame.transform.flip(pygame.image.load(os.path.join("slash_skill", "yellow_slash.png")).convert_alpha(), True, False),
+    "trecko": pygame.transform.flip(pygame.image.load(os.path.join("slash_skill", "green_slash.png")).convert_alpha(), True, False)
 }
 player_base = player.bottom
 
@@ -205,9 +230,12 @@ def draw_window():
         
         screen.blit(background1, (0, 0)) 
         for s in slashes:
-            s.move(Projectile_speed, 0)
+            if s.left:
+                s.move(-Projectile_speed, 0)
+            if s.right:
+                s.move(Projectile_speed, 0)
             s.draw(screen)
-            if s.x > Screen_x:
+            if s.x > Screen_x or s.x < 0:
                 slashes.remove(s)
     if Dictionary:
         selected = ""
@@ -284,8 +312,12 @@ while running:
     pygame.time.delay(60)
     clock.tick(27)
     if selected:
-        runner =character[selected]
-        slash_image = slash_color[selected]
+        if player.left:
+            runner =character_flip[selected]
+            slash_image = slash_color_flip[selected]
+        if player.right:
+            runner =character[selected]
+            slash_image = slash_color[selected]
     # Xử lý khi nhấn vào dictionary và chọn Pokemon
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -295,6 +327,9 @@ while running:
             # Điều kiện khi nhấn nút "Start Game"
             if button_startgame_rect.collidepoint(event.pos) and Dictionary == False and start == False:
                 start = True
+                player.x = Screen_x//2 - player.width//2
+                player.y = 425
+                enemy.x = 800
                 GameOver = False
                 fade_in(screen, background1, 2000)
             
@@ -333,9 +368,13 @@ while running:
         enemy.move(-Projectile_speed, 0)
         if keys[pygame.K_a] and player.x > speed:
             print("on click A")
+            player.right = False
+            player.left = True
             player.move(-speed, 0)
         if keys[pygame.K_d] and player.x < Screen_x - player.width - speed:
             print("on click D")
+            player.right = True
+            player.left = False
             player.move(speed, 0)
         if keys[pygame.K_SPACE] and not isJump:
             print("on click SPACE")
@@ -349,8 +388,9 @@ while running:
             slashes.clear()
     current_time = pygame.time.get_ticks() + cooldown_time
     if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
+        print("on click Q")
         scaled_image = pygame.transform.scale(slash_image, (200, 200))
-        new_slash = Projectile(player.x + 50, player.y -50, scaled_image, )
+        new_slash = Projectile(player.x - 50, player.y - 50, scaled_image, player.left, player.right)
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:

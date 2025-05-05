@@ -1,10 +1,10 @@
 class Projectile:
-    def __init__(self, x, y, image, color="red"):
-        self.color = color
-        self.image = image
+    def __init__(self, x, y, image, left, right):
         self.x = x
         self.y = y
-        self.bottom = self.y + self.image.get_height()
+        self.image = image
+        self.left = left
+        self.right = right
 
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))

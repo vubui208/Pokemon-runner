@@ -1,12 +1,12 @@
 class Pokemon:
-    def __init__(self, images, x, y, color = "red"):
+    def __init__(self, images, x, y):
         self.images = images
-        self.color = color
         self.x = x
         self.y = y
         self.width = images[0].get_width()
         self.height = images[0].get_height()
-
+        self.right = True
+        self.left = False
     def move(self, dx, dy):
         self.x += dx
         self.y += dy
