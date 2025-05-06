@@ -41,11 +41,7 @@ charmander_running_flip = []
 trecko_running_flip = []
 enemy_image_flip = []
 background_image = []
-<<<<<<< HEAD
 spawn_rate = 2000
-=======
-spawn_rate = 1000
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
 for filename in sorted(os.listdir("background_img")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
         path = os.path.join("background_img", filename)
@@ -77,11 +73,7 @@ for filename in sorted(os.listdir("charmander_frame")):
 for filename in enemy_image:
     
     flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
-<<<<<<< HEAD
     enemy_image_flip.append(pygame.transform.scale(flipped_image, (80, 80)))
-=======
-    enemy_image_flip.append(pygame.transform.scale(flipped_image, (100, 100)))
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
 for filename in pikachu_running:
     
     flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
@@ -102,7 +94,6 @@ GameOver_font = pygame.font.Font("font.ttf", 50)
 Replay_font =  pygame.font.Font("font.ttf", 30)
 Choosing_font = pygame.font.Font("font.ttf", 40)
 outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
-<<<<<<< HEAD
 Score_font = pygame.font.Font("font.ttf")
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
@@ -115,18 +106,6 @@ last_slash_time = 0
 y_velocity = 0  
 Projectile_speed = 30
 enemy_speed = 20
-=======
-BUTTON_COLOR = (255, 165, 0)
-BUTTON_BORDER_COLOR = None
-
-speed = 10 
-jump_speed = -30  
-gravity = 4   
-cooldown_time = 100
-last_slash_time = 0
-y_velocity = 0  
-Projectile_speed = 10
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
 # game status 
 isJump = False
 start = False
@@ -135,11 +114,7 @@ Dictionary = True
 # initiate object
 player = Pokemon(pikachu_running,80,425,)  
 
-<<<<<<< HEAD
 
-=======
-slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), True,False)
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
 
 character = {
     "charmander" : charmander_running,
@@ -273,19 +248,12 @@ def draw_window():
                 slashes.remove(s)
         for e in enemies:
             if e.left:
-<<<<<<< HEAD
                 e.move(-enemy_speed, 0)
                 img = enemy_image
             if e.right:
                 e.move(enemy_speed, 0)
                 img = enemy_image_flip
             screen.blit(img[int(pygame.time.get_ticks() / 100) % len(enemy_image)], (e.x, e.y))
-=======
-                e.move(-Projectile_speed, 0)
-            if e.right:
-                e.move(Projectile_speed, 0)
-            screen.blit(enemy_image[int(pygame.time.get_ticks() / 100) % len(enemy_image)], (e.x, e.y))
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
             if e.x < 0 or e.x > Screen_x:
                 enemies.remove(e)
     if Dictionary:
@@ -451,7 +419,6 @@ while running:
     current_time = pygame.time.get_ticks() + cooldown_time
     if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
         print("on click Q")
-<<<<<<< HEAD
         if selected == "charmander":
            scaled_image = pygame.transform.scale(slash_image, (100,100 ))
            distance = 0
@@ -460,10 +427,6 @@ while running:
             distance = -50
         
         new_slash = Projectile(player.x, player.y  + distance, scaled_image, player.left, player.right)
-=======
-        scaled_image = pygame.transform.scale(slash_image, (200, 200))
-        new_slash = Projectile(player.x - 50, player.y - 50, scaled_image, player.left, player.right)
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:
@@ -484,7 +447,6 @@ while running:
             isJump = False
             y_velocity = 0
     for e in enemies:
-<<<<<<< HEAD
         e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
         if player_rect.colliderect(e_rect):
             GameOver = True
@@ -492,15 +454,6 @@ while running:
         i_rect = i.image.get_rect(topleft=(i.x, i.y+10))
         for e in enemies:
             e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
-=======
-        e_rect = e.images[0].get_rect(topleft=(e.x, e.y))
-        if player_rect.colliderect(e_rect):
-            GameOver = True
-    for i in slashes:
-        i_rect = i.image.get_rect(topleft=(i.x-50, i.y))
-        for e in enemies:
-            e_rect = e.images[0].get_rect(topleft=(e.x, e.y))
->>>>>>> 2ba0ab843d6bc293129926a9f56cde7ec2523a62
             if i_rect.colliderect(e_rect):
                 enemies.remove(e)
                 
