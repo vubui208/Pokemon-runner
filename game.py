@@ -35,16 +35,19 @@ selected = ""
 pikachu_running = []
 charmander_running = []
 trecko_running = []
+enemy_image = []
 pikachu_running_flip = []
 charmander_running_flip = []
 trecko_running_flip = []
+enemy_image_flip = []
 background_image = []
+spawn_rate = 1000
 for filename in sorted(os.listdir("background_img")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
         path = os.path.join("background_img", filename)
         image = pygame.image.load(path).convert_alpha()
         background_image.append(pygame.transform.scale(image, (800, 600)))
-enemy_image = []
+
 for filename in sorted(os.listdir("enemy_img")):
     if filename.endswith(".gif"): 
         path = os.path.join("enemy_img", filename)
@@ -67,6 +70,10 @@ for filename in sorted(os.listdir("charmander_frame")):
         charmander_running.append(pygame.transform.scale(image, (150, 150)))
 
 # flip image
+for filename in enemy_image:
+    
+    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
+    enemy_image_flip.append(pygame.transform.scale(flipped_image, (100, 100)))
 for filename in pikachu_running:
     
     flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
@@ -96,7 +103,7 @@ gravity = 4
 cooldown_time = 100
 last_slash_time = 0
 y_velocity = 0  
-Projectile_speed = 30
+Projectile_speed = 10
 # game status 
 isJump = False
 start = False
@@ -104,7 +111,7 @@ GameOver = False
 Dictionary = True
 # initiate object
 player = Pokemon(pikachu_running,80,425,)  
-enemy = Enemy(enemy_image,800,450) 
+
 slash = Projectile(player.x, player.y, pygame.image.load(os.path.join("slash_skill","red_slash.png")).convert_alpha(), True,False)
 
 character = {
@@ -237,6 +244,14 @@ def draw_window():
             s.draw(screen)
             if s.x > Screen_x or s.x < 0:
                 slashes.remove(s)
+        for e in enemies:
+            if e.left:
+                e.move(-Projectile_speed, 0)
+            if e.right:
+                e.move(Projectile_speed, 0)
+            screen.blit(enemy_image[int(pygame.time.get_ticks() / 100) % len(enemy_image)], (e.x, e.y))
+            if e.x < 0 or e.x > Screen_x:
+                enemies.remove(e)
     if Dictionary:
         selected = ""
         draw_dictionary_window()
@@ -269,7 +284,7 @@ def draw_window():
         draw_start_window(button_rect, button_dictionary_rect)
         
     if start and not Dictionary:
-        screen.blit(enemy_image[int(pygame.time.get_ticks() / 100) % len(enemy_image)], (enemy.x, enemy.y))
+        
 
         if not isJump:
             screen.blit(runner[int(pygame.time.get_ticks() / 100) % len(runner)], (player.x, player.y))
@@ -303,12 +318,15 @@ replay_rect.topleft = (Screen_x // 2 - replay_text.get_width() // 2 + 15, Screen
 Choosing_text = Choosing_font.render("Choose your Pokemon", True, (0, 0, 0))
 Choosing_rect = Choosing_text.get_rect()
 Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen_y // 2)
+SPAWN_ENEMY_EVENT = pygame.USEREVENT + 1
+pygame.time.set_timer(SPAWN_ENEMY_EVENT, spawn_rate)  # Sự kiện này sẽ xảy ra mỗi 2000ms (2 giây)
 # Main game
 slashes = [] 
+enemies = []
 isDone = True
 while running:
     player_rect = pygame.Rect(player.x, player.y, player.images[0].get_width()-60, player.images[0].get_height())
-    enemy_rect = pygame.Rect(enemy.x, enemy.y, enemy.images[0].get_width()-50, enemy.images[0].get_height())
+    
     pygame.time.delay(60)
     clock.tick(27)
     if selected:
@@ -329,7 +347,7 @@ while running:
                 start = True
                 player.x = Screen_x//2 - player.width//2
                 player.y = 425
-                enemy.x = 800
+                enemies.clear()
                 GameOver = False
                 fade_in(screen, background1, 2000)
             
@@ -360,12 +378,20 @@ while running:
                     Dictionary = False  # Chọn Pokémon và thoát khỏi Dictionary
                     print("DEBUG: Chosen Trecko")
                     isDone = False
- 
+        if event.type == SPAWN_ENEMY_EVENT:
+            if not GameOver and not Dictionary:
+                k = random.randint(0,1)
+                if k == 0:
+                    new_enemy = Enemy(enemy_image,True,False,800,450)
+                if k == 1:
+                    new_enemy = Enemy(enemy_image,False,True,0,450)
+                enemies.append(new_enemy)
     keys = pygame.key.get_pressed()
     
     if start:
         Dictionary = False
-        enemy.move(-Projectile_speed, 0)
+        
+        
         if keys[pygame.K_a] and player.x > speed:
             print("on click A")
             player.right = False
@@ -382,7 +408,7 @@ while running:
             y_velocity = jump_speed
         if keys[pygame.K_r] and GameOver:
             GameOver = False
-            enemy.x = 800
+            enemies.clear()
             player.x = Screen_x//2 - player.width//2
             last_slash_time = 0
             slashes.clear()
@@ -397,7 +423,7 @@ while running:
 
         start = False
         Dictionary = False
-        enemy.x = 800
+        enemies.clear()
         player.y = 425
 
 
@@ -410,14 +436,18 @@ while running:
             player.bottom = player_base
             isJump = False
             y_velocity = 0
-    if enemy.x < 0:
-            enemy.x = 800
-    if player_rect.colliderect(enemy_rect):
-        GameOver = True
+    for e in enemies:
+        e_rect = e.images[0].get_rect(topleft=(e.x, e.y))
+        if player_rect.colliderect(e_rect):
+            GameOver = True
     for i in slashes:
         i_rect = i.image.get_rect(topleft=(i.x-50, i.y))
-        if i_rect.colliderect(enemy_rect):
-            enemy.x = 800
+        for e in enemies:
+            e_rect = e.images[0].get_rect(topleft=(e.x, e.y))
+            if i_rect.colliderect(e_rect):
+                enemies.remove(e)
+                
+       
     draw_window()
 
 pygame.quit()

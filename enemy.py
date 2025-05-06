@@ -2,11 +2,13 @@ import pygame
 import os
 
 class Enemy:
-    def __init__(self, images, x=80, y=400):
+    def __init__(self, images,left,right, x=80, y=400):
         self.images = images        # Lưu list hình ảnh
         self.current_frame = 0      # Frame hiện tại cho animation
         self.x = x
         self.y = y
+        self.left = left
+        self.right = right
         self.rect = images[0].get_rect(topleft=(x, y))
         # Lưu giá trị bottom ban đầu để làm mặt đất
         self.image_height = images[0].get_height()
