@@ -41,7 +41,7 @@ charmander_running_flip = []
 trecko_running_flip = []
 enemy_image_flip = []
 background_image = []
-spawn_rate = 2000
+spawn_rate = 1000
 for filename in sorted(os.listdir("background_img")):
     if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
         path = os.path.join("background_img", filename)
@@ -94,14 +94,14 @@ GameOver_font = pygame.font.Font("font.ttf", 50)
 Replay_font =  pygame.font.Font("font.ttf", 30)
 Choosing_font = pygame.font.Font("font.ttf", 40)
 outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
-Score_font = pygame.font.Font("font.ttf")
+Score_font = pygame.font.Font("font.ttf",25)
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 
 speed = 20
 jump_speed = -30  
 gravity = 4   
-cooldown_time = 5000
+cooldown_time = 100
 last_slash_time = 0
 y_velocity = 0  
 Projectile_speed = 30
@@ -288,7 +288,8 @@ def draw_window():
         draw_start_window(button_rect, button_dictionary_rect)
         
     if start and not Dictionary:
-        
+        score_text = Score_font.render(f"Score: {Score}", True, (255, 255, 255))
+        screen.blit(score_text, (score_rect.centerx-50, score_rect.centery-10))
 
         if not isJump:
             screen.blit(runner[int(pygame.time.get_ticks() / 100) % len(runner)], (player.x, player.y))
@@ -322,13 +323,19 @@ replay_rect.topleft = (Screen_x // 2 - replay_text.get_width() // 2 + 15, Screen
 Choosing_text = Choosing_font.render("Choose your Pokemon", True, (0, 0, 0))
 Choosing_rect = Choosing_text.get_rect()
 Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen_y // 2)
+score_text = Score_font.render("Score: 0", True, (0, 0, 0))
+score_rect = score_text.get_rect()
+score_rect.topleft = (10, 10)
 SPAWN_ENEMY_EVENT = pygame.USEREVENT + 1
 pygame.time.set_timer(SPAWN_ENEMY_EVENT, spawn_rate)  # Sự kiện này sẽ xảy ra mỗi 2000ms (2 giây)
 # Main game
 slashes = [] 
 enemies = []
 isDone = True
+start_time = pygame.time.get_ticks()
+
 while running:
+    Start_time = pygame.time.get_ticks()
     player_rect = pygame.Rect(player.x, player.y, player.images[0].get_width()-60, player.images[0].get_height())
     
     pygame.time.delay(60)
@@ -352,8 +359,12 @@ while running:
                 player.x = Screen_x//2 - player.width//2
                 player.y = 425
                 enemies.clear()
+                
+
                 GameOver = False
                 fade_in(screen, background1, 2000)
+                
+                start_time = pygame.time.get_ticks()
             
             # Điều kiện khi nhấn vào Dictionary
             if button_dictionary_rect.collidepoint(event.pos) and start == False and Dictionary == False:
@@ -393,9 +404,13 @@ while running:
     keys = pygame.key.get_pressed()
     
     if start:
+        
         Dictionary = False
         
         
+        Score = (pygame.time.get_ticks() - start_time) // 100
+        
+        print(Score)
         if keys[pygame.K_a] and player.x > speed:
             print("on click A")
             player.right = False
@@ -430,7 +445,7 @@ while running:
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:
-
+        start_time = pygame.time.get_ticks()
         start = False
         Dictionary = False
         enemies.clear()
@@ -449,6 +464,7 @@ while running:
     for e in enemies:
         e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
         if player_rect.colliderect(e_rect):
+            start_time = pygame.time.get_ticks()
             GameOver = True
     for i in slashes:
         i_rect = i.image.get_rect(topleft=(i.x, i.y+10))
