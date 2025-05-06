@@ -383,7 +383,11 @@ while running:
         if keys[pygame.K_r] and GameOver:
             GameOver = False
             enemy.x = 800
+<<<<<<< HEAD
             player.x = 80
+=======
+            player.x = Screen_x//2 - player.width//2
+>>>>>>> d380697 (spawn location fixed and left animation fixed)
             last_slash_time = 0
             slashes.clear()
     current_time = pygame.time.get_ticks() + cooldown_time
@@ -394,8 +398,12 @@ while running:
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:
+<<<<<<< HEAD
         print(Dictionary)
         selected = ""
+=======
+
+>>>>>>> d380697 (spawn location fixed and left animation fixed)
         start = False
         Dictionary = False
         enemy.x = 800
