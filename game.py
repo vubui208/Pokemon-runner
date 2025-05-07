@@ -97,23 +97,24 @@ outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # 
 Score_font = pygame.font.Font("font.ttf",25)
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
+player = Pokemon(pikachu_running,80,425)
 highest_score = 0
 
 speed = 20
 jump_speed = -30  
 gravity = 4   
-cooldown_time = 100
+
 last_slash_time = 0
 y_velocity = 0  
 Projectile_speed = 30
-enemy_speed = 20
+enemy_speed = 5
 # game status 
 isJump = False
 start = False
 GameOver = False
 Dictionary = True
 # initiate object
-player = Pokemon(pikachu_running,80,425,)  
+  
 
 
 
@@ -409,22 +410,29 @@ while running:
     if start:
         
         Dictionary = False
-        
         Score = (pygame.time.get_ticks() - start_time) // 100
+        if Score > 500 and Score < 1000:
+            if Score%50 == 0 and Score > 0:
+                enemy_speed = 5 +int( Score/50)*10
+                print("Speed:" , enemy_speed)
+        elif Score > 0 and Score < 500:
+            if Score%100 == 0 and Score > 0:
+                enemy_speed = 5 +int( Score/100)*5
+                print("Speed:" , enemy_speed)
         
-        print(Score)
+        
+       
         if keys[pygame.K_a] and player.x > speed:
-            print("on click A")
+            
             player.right = False
             player.left = True
             player.move(-speed, 0)
         if keys[pygame.K_d] and player.x < Screen_x - player.width - speed:
-            print("on click D")
+           
             player.right = True
             player.left = False
             player.move(speed, 0)
         if keys[pygame.K_SPACE] and not isJump:
-            print("on click SPACE")
             isJump = True
             y_velocity = jump_speed
         if keys[pygame.K_r] and GameOver:
@@ -435,10 +443,9 @@ while running:
             slashes.clear()
         if Score > highest_score:
             highest_score = Score
-    
+    cooldown_time = player.attack_speed
     current_time = pygame.time.get_ticks() + cooldown_time
     if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
-        print("on click Q")
         if selected == "charmander":
            scaled_image = pygame.transform.scale(slash_image, (100,100 ))
            distance = 0
@@ -470,6 +477,7 @@ while running:
         e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
         if player_rect.colliderect(e_rect):
             start_time = pygame.time.get_ticks()
+            enemy_speed = 5
             GameOver = True
     for i in slashes:
         i_rect = i.image.get_rect(topleft=(i.x, i.y+10))
