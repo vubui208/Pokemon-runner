@@ -97,6 +97,7 @@ outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # 
 Score_font = pygame.font.Font("font.ttf",25)
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
+highest_score = 0
 
 speed = 20
 jump_speed = -30  
@@ -288,7 +289,9 @@ def draw_window():
         draw_start_window(button_rect, button_dictionary_rect)
         
     if start and not Dictionary:
+        Higest_score_text = Score_font.render(f"Score: {highest_score}", True, (255, 255, 255))
         score_text = Score_font.render(f"Score: {Score}", True, (255, 255, 255))
+        screen.blit(Higest_score_text, (score_rect.centerx-50, score_rect.centery+30))
         screen.blit(score_text, (score_rect.centerx-50, score_rect.centery-10))
 
         if not isJump:
@@ -407,7 +410,6 @@ while running:
         
         Dictionary = False
         
-        
         Score = (pygame.time.get_ticks() - start_time) // 100
         
         print(Score)
@@ -431,6 +433,9 @@ while running:
             player.x = Screen_x//2 - player.width//2
             last_slash_time = 0
             slashes.clear()
+        if Score > highest_score:
+            highest_score = Score
+    
     current_time = pygame.time.get_ticks() + cooldown_time
     if keys[pygame.K_q] and current_time - last_slash_time > cooldown_time:
         print("on click Q")
