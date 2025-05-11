@@ -5,11 +5,22 @@ import random
 from enemy import Enemy
 from pokemon import Pokemon
 from projectile import Projectile
+from boss import Boss
+clock = pygame.time.Clock()
+
 Screen_x = 800
 Screen_y = 600
 pygame.init()
 pygame.mixer.init()
 # C:\Users\KelvinThePig\OneDrive\Máy tính\Game_ap_cs\pokemonChoosing_img
+Title_Font = pygame.font.Font("font.ttf", 45)
+gameStart_font = pygame.font.Font("font.ttf", 25)
+Dicitonary_font = pygame.font.Font("font.ttf", 25)    
+GameOver_font = pygame.font.Font("font.ttf", 50)
+Replay_font =  pygame.font.Font("font.ttf", 30)
+Choosing_font = pygame.font.Font("font.ttf", 40)
+outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
+Score_font = pygame.font.Font("font.ttf",25)
 # sound effect
 jumping_sound = pygame.mixer.Sound(os.path.join("sound_effect","jump_sound.wav"))
 gameover_sound = pygame.mixer.Sound(os.path.join("sound_effect","gameover.wav"))
@@ -18,6 +29,8 @@ background1 = pygame.image.load(os.path.join("background","image1.png"))
 background1 = pygame.transform.scale(background1,(Screen_x,Screen_y))
 background2 = pygame.image.load(os.path.join("background","image2.png"))
 background2 = pygame.transform.scale(background2,(Screen_x,Screen_y))
+bossroom = pygame.image.load(os.path.join("bossRoom","bossroom.jpg"))
+bossroom = pygame.transform.scale(bossroom,(Screen_x,Screen_y))
 option1 = pygame.image.load(os.path.join("pokemonChoosing_img","charmander.png"))
 
 option1 = pygame.transform.scale(option1,(100,100))
@@ -33,6 +46,10 @@ option3_rect = option3.get_rect()  # Fix: Use option3's rect
 option3_rect.topleft = (option2_rect.x+200,350)
 pygame.display.set_caption("POKEMON RUN")
 screen = pygame.display.set_mode((Screen_x, Screen_y))
+screen.fill((0, 0, 0))
+loading_text = GameOver_font.render("Loading...", True, (255, 255, 255))
+screen.blit(loading_text, (Screen_x//2 - loading_text.get_width()//2, Screen_y//2))
+pygame.display.update()
 selected = ""
 # images
 
@@ -45,69 +62,79 @@ charmander_running_flip = []
 trecko_running_flip = []
 enemy_image_flip = []
 background_image = []
-spawn_rate = 1000
-for filename in sorted(os.listdir("background_img")):
-    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
-        path = os.path.join("background_img", filename)
-        image = pygame.image.load(path).convert_alpha()
-        background_image.append(pygame.transform.scale(image, (800, 600)))
+boss_image = []
+boss_image_flip = []
+spawn_rate = 2000
+# load animation
+def load_animation(folder_path,x,y):
+    background_images = []
+    for filename in sorted(os.listdir(folder_path)):
+        if filename.endswith(".gif"):  
+            path = os.path.join(folder_path, filename)
+            image = pygame.image.load(path).convert_alpha()
+            scaled = pygame.transform.scale(image, (x, y))
+            background_images.append(scaled)
+    return background_images
 
-for filename in sorted(os.listdir("enemy_img")):
-    if filename.endswith(".gif"): 
-        path = os.path.join("enemy_img", filename)
-        image = pygame.image.load(path).convert_alpha()
-        enemy_image.append(pygame.transform.scale(image, (80, 80)))
-for filename in sorted(os.listdir("pikachu_frame")):
-    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
-        path = os.path.join("pikachu_frame", filename)
-        image = pygame.image.load(path).convert_alpha()
-        pikachu_running.append(pygame.transform.scale(image, (100, 100)))
-for filename in sorted(os.listdir("trecko_frame")):
-    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
-        path = os.path.join("trecko_frame", filename)
-        image = pygame.image.load(path).convert_alpha()
-        trecko_running.append(pygame.transform.scale(image, (150, 150)))
-for filename in sorted(os.listdir("charmander_frame")):
-    if filename.endswith(".gif"):  # hoặc .jpg tùy bạn
-        path = os.path.join("charmander_frame", filename)
-        image = pygame.image.load(path).convert_alpha()
-        charmander_running.append(pygame.transform.scale(image, (150, 150)))
+def load_flipped_animation(folder_path,x,y):
+    background_image = []
+    for filename in sorted(os.listdir(folder_path)):
+        if filename.endswith(".gif"): 
+            path = os.path.join(folder_path, filename)
+            image = pygame.image.load(path).convert_alpha()
+            flipped = pygame.transform.flip(image, True, False)
+            scaled = pygame.transform.scale(flipped, (x, y))
+            background_image.append(scaled)
+    return background_image
+# boss image
+# idle
 
+background_image = load_animation("background_img",800,600)
+enemy_image = load_animation("enemy_img",80,80)
+pikachu_running = load_animation("pikachu_frame",100,100)
+charmander_running = load_animation("charmander_frame",150,150)
+trecko_running = load_animation("trecko_frame",150,150)
 # flip image
-for filename in enemy_image:
-    
-    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
-    enemy_image_flip.append(pygame.transform.scale(flipped_image, (80, 80)))
-for filename in pikachu_running:
-    
-    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
-    pikachu_running_flip.append(pygame.transform.scale(flipped_image, (100, 100)))
-clock = pygame.time.Clock()
-for filename in charmander_running:
-    
-    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
-    charmander_running_flip.append(pygame.transform.scale(flipped_image, (150, 150)))
-for filename in trecko_running:
-    
-    flipped_image = pygame.transform.flip(filename, True, False)  # Lật ảnh theo chiều ngang
-    trecko_running_flip.append(pygame.transform.scale(flipped_image, (150, 150)))
-Title_Font = pygame.font.Font("font.ttf", 45)
-gameStart_font = pygame.font.Font("font.ttf", 25)
-Dicitonary_font = pygame.font.Font("font.ttf", 25)    
-GameOver_font = pygame.font.Font("font.ttf", 50)
-Replay_font =  pygame.font.Font("font.ttf", 30)
-Choosing_font = pygame.font.Font("font.ttf", 40)
-outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
-Score_font = pygame.font.Font("font.ttf",25)
+enemy_image_flip = load_flipped_animation("enemy_img",80,80)
+pikachu_running_flip = load_flipped_animation("pikachu_frame",100,100)
+charmander_running_flip = load_flipped_animation("charmander_frame",150,150)
+trecko_running_flip = load_flipped_animation("trecko_frame",150,150)
+boss_size_x = 500
+boss_size_y = 300
+# boss idle
+boss_idle = load_animation("boss_img/boss_idle",boss_size_x,boss_size_y)
+boss_flipped_idle = load_flipped_animation("boss_img/boss_idle",boss_size_x,boss_size_y)
+# boss move
+boss_move = load_animation("boss_img/boss_move",boss_size_x,boss_size_y)
+boss_flipped_move = load_flipped_animation("boss_img/boss_move",boss_size_x,boss_size_y)
+# boss swing
+boss_swing = load_animation("boss_img/boss_swing",boss_size_x,boss_size_y)
+boss_flipped_swing = load_flipped_animation("boss_img/boss_swing",boss_size_x,boss_size_y)
+# boss attack 1
+boss_attack1 = load_animation("boss_img/boss_attack1",boss_size_x,boss_size_y)
+boss_flipped_attack1 = load_flipped_animation("boss_img/boss_attack1",boss_size_x,boss_size_y)
+# boss attack 2
+boss_attack2 = load_animation("boss_img/boss_attack2",boss_size_x,boss_size_y)
+boss_flipped_attack2 = load_flipped_animation("boss_img/boss_attack2",boss_size_x,boss_size_y)
+# boss regeneration
+boss_regeneration = load_animation("boss_img/boss_buff",boss_size_x,boss_size_y)
+boss_flipped_regeneration = load_flipped_animation("boss_img/boss_buff",boss_size_x,boss_size_y)
+# boss death
+boss_death = load_animation("boss_img/boss_death",boss_size_x,boss_size_y)
+boss_flipped_death = load_flipped_animation("boss_img/boss_death",boss_size_x,boss_size_y)
+
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 player = Pokemon(pikachu_running,80,425)
+boss = Boss(boss_move,True,False,True,800,270)
+boss_rect = boss.images[0].get_rect(topleft=(boss.x, boss.y))
+
 highest_score = 0
 
 speed = 20
 jump_speed = -30  
 gravity = 4   
-
+Score = 0
 last_slash_time = 0
 y_velocity = 0  
 Projectile_speed = 30
@@ -171,7 +198,7 @@ def render_gradient_text(text, font, start_color, end_color):
 def fade_in(screen, bg_after, duration=1000):
     fade = pygame.Surface(screen.get_size())
     fade.fill((0, 0, 0))
-    clock = pygame.time.Clock()
+    
 
     start = pygame.time.get_ticks()
     while True:
@@ -244,6 +271,28 @@ def draw_window():
     if start:
         
         screen.blit(background1, (0, 0)) 
+        if Score >= 500:
+            if Score <=600:
+                enemies.clear()
+                fade_in(screen, bossroom, 1000)
+            screen.blit(bossroom, (0, 0))
+            screen.blit(boss.images[int(pygame.time.get_ticks() / 100) % len(boss.images)], (boss.x, boss.y))
+
+            if boss.left:
+                boss.move(-enemy_speed, 0)
+                boss.images = boss_flipped_move
+                if boss.x <= -400:
+                    boss.left = False
+                    boss.right = True
+                    boss.idle = False
+
+            elif boss.right:
+                boss.move(enemy_speed, 0)
+                boss.images = boss_move
+                if boss.x >= Screen_x-50:
+                    boss.left = True
+                    boss.right = False
+                    boss.idle = False
         for s in slashes:
             if s.left:
                 s.move(-Projectile_speed, 0)
@@ -370,7 +419,7 @@ while running:
                 
 
                 GameOver = False
-                fade_in(screen, background1, 2000)
+                fade_in(screen, background1, 1000)
                 
                 start_time = pygame.time.get_ticks()
             
@@ -380,7 +429,7 @@ while running:
                 selected = ""  # Reset lựa chọn Pokémon
                 start = False
                 print("DEBUG: Returning to Dictionary")
-                fade_in(screen, background2, 2000)
+                fade_in(screen, background2, 1000)
                 isDone = True  # Đảm bảo không cho phép chọn lại
 
 
@@ -402,7 +451,7 @@ while running:
                     print("DEBUG: Chosen Trecko")
                     isDone = False
         if event.type == SPAWN_ENEMY_EVENT:
-            if not GameOver and not Dictionary:
+            if not GameOver and not Dictionary and Score < 500:
                 k = random.randint(0,1)
                 if k == 0:
                     new_enemy = Enemy(enemy_image,True,False,800,450)
@@ -414,14 +463,16 @@ while running:
     if start:
         
         Dictionary = False
-        Score = (pygame.time.get_ticks() - start_time) // 100
-        if Score > 500 and Score < 1000:
+        Score = (pygame.time.get_ticks() - start_time) // 10
+        if Score >= 300 and Score < 500:
             if Score%50 == 0 and Score > 0:
-                enemy_speed = 5 +int( Score/50)*10
+                enemy_speed += 4
+                spawn_rate -= 100
                 print("Speed:" , enemy_speed)
-        elif Score > 0 and Score < 500:
+        elif Score >= 0 and Score < 300:
             if Score%100 == 0 and Score > 0:
-                enemy_speed = 5 +int( Score/100)*5
+                spawn_rate -= 50
+                enemy_speed += 2
                 print("Speed:" , enemy_speed)
         
         
@@ -480,11 +531,13 @@ while running:
             player.bottom = player_base
             isJump = False
             y_velocity = 0
+    # q
     for e in enemies:
         e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
         if player_rect.colliderect(e_rect) and not GameOver:
             start_time = pygame.time.get_ticks()
             enemy_speed = 5
+            spawn_rate = 2000
             GameOver = True
             gameover_sound.play()
     for i in slashes:
