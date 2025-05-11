@@ -127,15 +127,18 @@ BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 player = Pokemon(pikachu_running,80,425)
 boss = Boss(boss_move,True,False,True,800,270)
-boss_rect = boss.images[0].get_rect(topleft=(boss.x, boss.y))
+boss_rect = boss.images[0].get_rect(topleft=(boss.x-boss.images[0].get_width(), boss.y))
 
 highest_score = 0
 
 speed = 20
-jump_speed = -30  
+jump_speed = -40  
 gravity = 4   
 Score = 0
 last_slash_time = 0
+boss_cooldown = 2000 
+last_boss_attack_time = 0  
+
 y_velocity = 0  
 Projectile_speed = 30
 enemy_speed = 5
@@ -249,7 +252,9 @@ def draw_dictionary_window():
                 pygame.draw.rect(screen, border_colors[i], btn_option_rects[i], 3, border_radius=8)
 
 pygame.display.update()
-
+isFinish = True
+skill_index = 0
+skill_start_time = pygame.time.get_ticks()
 # draw starting window
 def draw_start_window(button_rect, button_dictionary_rect):
     screen.blit(Title, (Screen_x // 2 - Title.get_width() // 2 + 20, Screen_y // 2 - 150))
@@ -265,34 +270,78 @@ def draw_window():
     global start
     global GameOver
     global Dictionary
+    global isFinish
+    global skill_index
+    global skill_start_time
+    global last_boss_attack_time
     frame_delay = 100  # hiển thị mỗi frame trong 50ms (~20 FPS)
     frame_index = (pygame.time.get_ticks() // frame_delay) % len(background_image)
     screen.blit(background1, (0, 0))
     if start:
         
         screen.blit(background1, (0, 0)) 
-        if Score >= 500:
-            if Score <=600:
+        if Score >= 500 and not GameOver:
+            
+            if Score <= 600:
                 enemies.clear()
+                slashes.clear()
                 fade_in(screen, bossroom, 1000)
             screen.blit(bossroom, (0, 0))
-            screen.blit(boss.images[int(pygame.time.get_ticks() / 100) % len(boss.images)], (boss.x, boss.y))
 
-            if boss.left:
-                boss.move(-enemy_speed, 0)
-                boss.images = boss_flipped_move
-                if boss.x <= -400:
-                    boss.left = False
-                    boss.right = True
-                    boss.idle = False
-
-            elif boss.right:
-                boss.move(enemy_speed, 0)
-                boss.images = boss_move
-                if boss.x >= Screen_x-50:
+            if isFinish:
+                # boss di chuyển
+                
+                screen.blit(boss.images[int(pygame.time.get_ticks() / 100) % len(boss.images)], (boss.x, boss.y))
+                # Always update boss direction
+                if boss.x - player.x > 300 and not boss.left:
                     boss.left = True
                     boss.right = False
-                    boss.idle = False
+                    boss.x -=110
+                elif boss.x - player.x < -300 and not boss.right:
+                    boss.left = False
+                    boss.right = True
+                    boss.x +=110
+                if boss.left:
+                    boss.move(-enemy_speed, 0)
+                    boss.images = boss_flipped_move
+                elif boss.right:
+                    boss.move(enemy_speed, 0)
+                    boss.images = boss_move
+                boss_center = boss.x + boss_size_x // 2
+                player_center = player.x + player.width // 2
+                now = pygame.time.get_ticks()
+                if abs(boss_center - player_center) <= 100 and isFinish and now - last_boss_attack_time >= boss_cooldown:
+                    isFinish = False
+                    skill_index = 0
+                    
+                    skill_start_time = pygame.time.get_ticks()
+                    if boss.left:
+                        boss.images = boss_flipped_swing
+                    else:
+                        boss.images = boss_swing
+                
+            else:
+                now = pygame.time.get_ticks()
+                if skill_index < len(boss.images):
+                    if now - skill_start_time >= 100:  # delay giữa các frame
+                        skill_start_time = now
+                        screen.blit(boss.images[skill_index], (boss.x, boss.y))
+                        skill_index += 1
+                    else:
+                        screen.blit(boss.images[skill_index], (boss.x, boss.y))
+                else:
+                    isFinish = True
+                    skill_index = 0
+                    last_boss_attack_time = pygame.time.get_ticks()
+                    screen.blit(boss.images[0], (boss.x, boss.y))
+                    if boss.left:
+                        boss.move(-enemy_speed, 0)
+                        boss.images = boss_flipped_move
+                    elif boss.right:
+                        boss.move(enemy_speed, 0)
+                        boss.images = boss_move
+                    
+
         for s in slashes:
             if s.left:
                 s.move(-Projectile_speed, 0)
