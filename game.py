@@ -281,23 +281,18 @@ def draw_window():
         
         screen.blit(background1, (0, 0)) 
         if Score >= 500 and not GameOver:
-            
             if Score <= 600:
                 enemies.clear()
                 slashes.clear()
                 fade_in(screen, bossroom, 1000)
             screen.blit(bossroom, (0, 0))
-
-            if isFinish:
-                # boss di chuyển
-                
+            if isFinish:     
                 screen.blit(boss.images[int(pygame.time.get_ticks() / 100) % len(boss.images)], (boss.x, boss.y))
-                # Always update boss direction
-                if boss.x - player.x > 300 and not boss.left:
+                if boss.x - player.x > 200 and not boss.left or boss.x > Screen_x:
                     boss.left = True
                     boss.right = False
                     boss.x -=110
-                elif boss.x - player.x < -300 and not boss.right:
+                elif boss.x - player.x < -200 and not boss.right or boss.x < -100:
                     boss.left = False
                     boss.right = True
                     boss.x +=110
@@ -313,7 +308,6 @@ def draw_window():
                 if abs(boss_center - player_center) <= 100 and isFinish and now - last_boss_attack_time >= boss_cooldown:
                     isFinish = False
                     skill_index = 0
-                    
                     skill_start_time = pygame.time.get_ticks()
                     if boss.left:
                         boss.images = boss_flipped_swing
@@ -329,19 +323,18 @@ def draw_window():
                         skill_index += 1
                     else:
                         screen.blit(boss.images[skill_index], (boss.x, boss.y))
-                else:
+                else: # het animation
                     isFinish = True
                     skill_index = 0
                     last_boss_attack_time = pygame.time.get_ticks()
                     screen.blit(boss.images[0], (boss.x, boss.y))
+                    # ve lai de tranh bi flash
                     if boss.left:
                         boss.move(-enemy_speed, 0)
                         boss.images = boss_flipped_move
                     elif boss.right:
                         boss.move(enemy_speed, 0)
                         boss.images = boss_move
-                    
-
         for s in slashes:
             if s.left:
                 s.move(-Projectile_speed, 0)
