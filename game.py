@@ -21,6 +21,7 @@ Replay_font =  pygame.font.Font("font.ttf", 30)
 Choosing_font = pygame.font.Font("font.ttf", 40)
 outline = Choosing_font.render("Choose your Pokemon", True, (255, 255, 255))  # viền đen
 Score_font = pygame.font.Font("font.ttf",25)
+Boss_hp_font = pygame.font.Font("font.ttf",25)
 # sound effect
 jumping_sound = pygame.mixer.Sound(os.path.join("sound_effect","jump_sound.wav"))
 gameover_sound = pygame.mixer.Sound(os.path.join("sound_effect","gameover.wav"))
@@ -101,6 +102,8 @@ charmander_running_flip = load_flipped_animation("charmander_frame",150,150)
 trecko_running_flip = load_flipped_animation("trecko_frame",150,150)
 boss_size_x = 500
 boss_size_y = 300
+boss_hp = 100
+boss_max_hp = 100
 # boss idle
 boss_idle = load_animation("boss_img/boss_idle",boss_size_x,boss_size_y)
 boss_flipped_idle = load_flipped_animation("boss_img/boss_idle",boss_size_x,boss_size_y)
@@ -123,10 +126,20 @@ boss_flipped_regeneration = load_flipped_animation("boss_img/boss_buff",boss_siz
 boss_death = load_animation("boss_img/boss_death",boss_size_x,boss_size_y)
 boss_flipped_death = load_flipped_animation("boss_img/boss_death",boss_size_x,boss_size_y)
 
+boss_attack_right = {
+    1 : boss_attack1,
+    2 : boss_attack2,
+    3 : boss_swing
+}
+boss_attack_left = {
+    1 : boss_flipped_attack1,
+    2 : boss_flipped_attack2,
+    3 : boss_flipped_swing
+}
 BUTTON_COLOR = (255, 165, 0)
 BUTTON_BORDER_COLOR = None
 player = Pokemon(pikachu_running,80,425)
-boss = Boss(boss_move,True,False,True,800,270)
+boss = Boss(boss_move,True,False,True,800,270,boss_hp,boss_max_hp)
 boss_rect = boss.images[0].get_rect(topleft=(boss.x-boss.images[0].get_width(), boss.y))
 
 highest_score = 0
@@ -195,6 +208,32 @@ def render_gradient_text(text, font, start_color, end_color):
     gradient_surface.blit(text_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
     return gradient_surface
 
+# draw boss hp
+def draw_hp_bar(surface, x, y, current_hp, max_hp,width = 400, height = 30):
+    hp_ratio = current_hp / max_hp
+    current_bar_length = int(hp_ratio * width)
+    Boss_hp_text = Boss_hp_font.render("Boss HP", True, (255, 255, 255))
+    Boss_hp_rect = Boss_hp_text.get_rect()
+    Boss_hp_rect.center = (Screen_x // 2 + 270, y+ 15 )  # Canh giữa, nằm trên thanh máu
+    Boss_current_hp_text = Boss_hp_font.render(f"{current_hp}/{max_hp}", True, (255, 255, 255))
+    Boss_current_hp_rect = Boss_current_hp_text.get_rect()
+    Boss_current_hp_rect.center = (Screen_x // 2, y + 15)
+
+    # Màu sắc (RGB)
+    COPPER = (184, 115, 51)  # màu đồng
+    NOT_RED = (74, 29, 29)
+    RED = (255,0,0)
+
+    # Vẽ viền (khung ngoài)
+    pygame.draw.rect(surface, COPPER, (Screen_x//2 - 200, y - 2, width, height), border_radius=4)  # khung copper viền 2px
+    
+    # Vẽ nền (màu đỏ)
+    pygame.draw.rect(surface, NOT_RED, (Screen_x//2 - 200, y, width, height), border_radius=3)
+
+    # Vẽ phần máu còn lại (màu xanh)
+    pygame.draw.rect(surface, RED, (Screen_x//2-200, y, current_bar_length, height-4), border_radius=3)
+    screen.blit(Boss_hp_text, Boss_hp_rect)
+    screen.blit(Boss_current_hp_text, Boss_current_hp_rect)
 
 
 # fade in 
@@ -266,7 +305,9 @@ def draw_game_over_window(GameOver_rect):
     screen.blit(GameOver_text, (GameOver_rect.centerx - GameOver_text.get_width() // 2, GameOver_rect.centery - GameOver_text.get_height() // 2))
     screen.blit(replay_text, (replay_rect.centerx - replay_text.get_width() // 2, replay_rect.centery - replay_text.get_height() // 2))
 # drawing 
+skill = 0 
 def draw_window():
+    global skill
     global start
     global GameOver
     global Dictionary
@@ -278,15 +319,21 @@ def draw_window():
     frame_index = (pygame.time.get_ticks() // frame_delay) % len(background_image)
     screen.blit(background1, (0, 0))
     if start:
-        
         screen.blit(background1, (0, 0)) 
-        if Score >= 500 and not GameOver:
+        if Score >= 500 and not GameOver and boss.images != boss_death:
+            
+           
+            screen.blit(bossroom, (0, 0))
+            draw_hp_bar(screen, Screen_x//2 - 100, 100, boss.health, boss.maxHP)
             if Score <= 600:
                 enemies.clear()
                 slashes.clear()
                 fade_in(screen, bossroom, 1000)
-            screen.blit(bossroom, (0, 0))
+            
+            pygame.draw.rect(screen,(255,255,255),boss_rect,2)
             if isFinish:     
+               
+                
                 screen.blit(boss.images[int(pygame.time.get_ticks() / 100) % len(boss.images)], (boss.x, boss.y))
                 if boss.x - player.x > 200 and not boss.left or boss.x > Screen_x:
                     boss.left = True
@@ -305,16 +352,24 @@ def draw_window():
                 boss_center = boss.x + boss_size_x // 2
                 player_center = player.x + player.width // 2
                 now = pygame.time.get_ticks()
+                boss_skill = random.randint(1,3)
                 if abs(boss_center - player_center) <= 100 and isFinish and now - last_boss_attack_time >= boss_cooldown:
+                    boss_skill = random.randint(1,3)
+                    skill = boss_skill
                     isFinish = False
                     skill_index = 0
                     skill_start_time = pygame.time.get_ticks()
+                    
                     if boss.left:
-                        boss.images = boss_flipped_swing
+                        boss.images = boss_attack_left[boss_skill]
+                        
                     else:
-                        boss.images = boss_swing
+                        boss.images = boss_attack_right[boss_skill]
+                        
+                            
                 
             else:
+                
                 now = pygame.time.get_ticks()
                 if skill_index < len(boss.images):
                     if now - skill_start_time >= 100:  # delay giữa các frame
@@ -324,18 +379,31 @@ def draw_window():
                     else:
                         screen.blit(boss.images[skill_index], (boss.x, boss.y))
                 else: # het animation
+                    print("skill:",skill)
+                    if skill == 1:
+                        if boss.left:
+                            boss.x -= 200
+                        else:
+                            boss.x += 200
                     isFinish = True
                     skill_index = 0
                     last_boss_attack_time = pygame.time.get_ticks()
                     screen.blit(boss.images[0], (boss.x, boss.y))
                     # ve lai de tranh bi flash
+                    
+                    # Sau đó cập nhật lại animation như bình thường
                     if boss.left:
-                        boss.move(-enemy_speed, 0)
+                        
                         boss.images = boss_flipped_move
                     elif boss.right:
-                        boss.move(enemy_speed, 0)
+                       
                         boss.images = boss_move
+
+
         for s in slashes:
+            
+            s_rect = pygame.Rect(s.x, s.y, s.image.get_width(), s.image.get_height())  # tạo khung rect bao quanh hình ảnh (x, y, width, s.height)
+            pygame.draw.rect(screen,(255,255,255),s_rect,2)
             if s.left:
                 s.move(-Projectile_speed, 0)
             if s.right:
@@ -425,6 +493,7 @@ Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen
 score_text = Score_font.render("Score: 0", True, (0, 0, 0))
 score_rect = score_text.get_rect()
 score_rect.topleft = (10, 10)
+
 SPAWN_ENEMY_EVENT = pygame.USEREVENT + 1
 pygame.time.set_timer(SPAWN_ENEMY_EVENT, spawn_rate)  # Sự kiện này sẽ xảy ra mỗi 2000ms (2 giây)
 # Main game
@@ -534,6 +603,7 @@ while running:
             isJump = True
             y_velocity = jump_speed
         if keys[pygame.K_r] and GameOver:
+            boss.x = 800
             gameover_sound.stop()
             GameOver = False
             enemies.clear()
@@ -556,6 +626,8 @@ while running:
         slashes.append(new_slash)
         last_slash_time = current_time
     if keys[pygame.K_ESCAPE]:
+        boss.x = 800
+
         gameover_sound.stop()
         start_time = pygame.time.get_ticks()
         start = False
@@ -584,13 +656,33 @@ while running:
             gameover_sound.play()
     for i in slashes:
         i_rect = i.image.get_rect(topleft=(i.x, i.y+10))
+        # Lấy frame hiện tại của boss, tùy vào trạng thái đang attack hay idle
+        pygame.draw.rect(screen,(255,255,255),i_rect,2)
+
         for e in enemies[:]:  # Use a copy to avoid modification during iteration
             e_rect = e.images[0].get_rect(topleft=(e.x-50, e.y))
+            
             if i_rect.colliderect(e_rect):
                 if not GameOver:  # Optional: only play if not game over
                     dying_sound.play()
                 enemies.remove(e)
                 break  # Stop checking after removing one enemy
+    for i in slashes:
+        # Update boss_rect trước khi kiểm tra va chạm
+        if boss.left:
+            boss_rect = pygame.Rect(boss.x + 250, boss.y + 80, 150, 200)
+        else:
+            boss_rect = pygame.Rect(boss.x + 100, boss.y + 80, 150, 200)
+        
+        i_rect = i.image.get_rect(topleft=(i.x+10, i.y+10))
+        if i_rect.colliderect(boss_rect) and Score >= 500 and boss.images != boss_death :
+            print("HIT BOSS!")
+            boss.health -= random.randint(10,20)
+            slashes.remove(i)
+            if boss.health <= 0:
+                boss.images = boss_death
+            break
+
 
        
     draw_window()
