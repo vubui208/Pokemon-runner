@@ -301,9 +301,15 @@ def draw_start_window(button_rect, button_dictionary_rect):
     screen.blit(Dictionary_text, (button_dictionary_rect.centerx - Dictionary_text.get_width() // 2, button_dictionary_rect.centery - Dictionary_text.get_height() // 2))
 # draw game over window
 def draw_game_over_window(GameOver_rect):
+    if cur_background == bossroom:
+        replay = replay_boss_text
+        gameover = Gameover_boss_text
+    else:
+        replay = replay_text
+        gameover = GameOver_text
     screen.blit(cur_background, (0, 0))
-    screen.blit(GameOver_text, (GameOver_rect.centerx - GameOver_text.get_width() // 2, GameOver_rect.centery - GameOver_text.get_height() // 2))
-    screen.blit(replay_text, (replay_rect.centerx - replay_text.get_width() // 2, replay_rect.centery - replay_text.get_height() // 2))
+    screen.blit(gameover, (GameOver_rect.centerx - GameOver_text.get_width() // 2, GameOver_rect.centery - GameOver_text.get_height() // 2))
+    screen.blit(replay, (replay_rect.centerx - replay_text.get_width() // 2, replay_rect.centery - replay_text.get_height() // 2))
 # drawing 
 skill = 0 
 def draw_window():
@@ -518,11 +524,13 @@ Dictionary_rect.topleft = (Screen_x // 2 - startGame_text.get_width() // 2 + 17,
 button_dictionary_rect = Dictionary_rect.inflate(40, 20)
 button_dictionary_rect.topleft = (Dictionary_rect.left - 20, Dictionary_rect.top - 10)
 GameOver_text = render_gradient_text("GAME OVER!", Title_Font, (255, 223, 0), (255, 69, 58))
+Gameover_boss_text = render_gradient_text("GAME OVER!", Title_Font, (0, 191, 255), (0, 255, 127))
 GameOver_rect = GameOver_text.get_rect()
 GameOver_rect.topleft = (Screen_x // 2 - GameOver_text.get_width() // 2 + 15, Screen_y // 2-30 )
 replay_text = Replay_font.render("Press R to replay", True, (0, 0, 0))
 replay_rect = replay_text.get_rect()
 replay_rect.topleft = (Screen_x // 2 - replay_text.get_width() // 2 + 15, Screen_y // 2 + 30)
+replay_boss_text = Replay_font.render("Press R to replay", True, (255, 255, 25))
 Choosing_text = Choosing_font.render("Choose your Pokemon", True, (0, 0, 0))
 Choosing_rect = Choosing_text.get_rect()
 Choosing_rect.topleft = (Screen_x // 2 - Choosing_text.get_width() // 2 , Screen_y // 2)
