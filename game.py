@@ -327,7 +327,7 @@ def draw_window():
     screen.blit(background1, (0, 0))
     if start:
         screen.blit(background1, (0, 0)) 
-        if Score >= 500 and not GameOver and boss.images != boss_death:
+        if Score >= 1000 and not GameOver and boss.images != boss_death:
             cur_background = bossroom
            
             screen.blit(bossroom, (0, 0))
